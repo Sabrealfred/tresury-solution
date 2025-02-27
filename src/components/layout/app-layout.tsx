@@ -22,6 +22,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
+      // Verificar si es un usuario de demostración
+      const demoUser = localStorage.getItem("demoUser");
+      if (demoUser) {
+        // Eliminar la información del usuario de demostración
+        localStorage.removeItem("demoUser");
+        toast.success("Sesión de demostración cerrada exitosamente");
+        navigate("/auth");
+        return;
+      }
+      
+      // Cerrar sesión normal con Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       toast.success("Sesión cerrada exitosamente");

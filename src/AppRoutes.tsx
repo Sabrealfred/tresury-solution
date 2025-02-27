@@ -1,4 +1,6 @@
-import { Routes, Route } from "react-router-dom";
+import React, { lazy, Suspense } from "react";
+import { AppLayout } from "@/components/layout/app-layout";
+import { Routes, Route, Outlet } from "react-router-dom";
 import PersonalDashboard from "@/pages/Index";
 import Auth from "@/pages/Auth";
 import NotFound from "@/pages/NotFound";
@@ -38,9 +40,11 @@ import InvoicesPage from "@/pages/commercial/Invoices";
 import ExpensesPage from "@/pages/commercial/Expenses";
 import TradeFinancePage from "@/pages/commercial/TradeFinance";
 import PaymentProcessorPage from "@/pages/commercial/PaymentProcessor";
-import FundManagement from "@/pages/commercial/fund-management/Dashboard";
+import FundManagementDashboard from "@/pages/commercial/fund-management/Dashboard";
 import Portfolios from "@/pages/commercial/fund-management/Portfolios";
 import AIPortfolios from "@/pages/commercial/fund-management/AIPortfolios";
+import TradingPlatform from "@/pages/commercial/fund-management/trade/index";
+import InvestmentReports from "@/pages/commercial/fund-management/reports/index";
 import OperationsDashboard from "@/pages/commercial/operations/Dashboard";
 
 export function AppRoutes() {
@@ -63,16 +67,85 @@ export function AppRoutes() {
         </Route>
 
         {/* Regular User Routes */}
-        <Route path="/" element={<PersonalDashboard />} />
-        <Route path="/personal" element={<PersonalDashboard />} />
+        <Route path="/" element={<AppLayout><PersonalDashboard /></AppLayout>} />
+        <Route path="/personal" element={<AppLayout><PersonalDashboard /></AppLayout>} />
         
         {/* Business Routes */}
-        <Route path="/business">
+        <Route path="/business" element={<AppLayout>
+          <Outlet />
+        </AppLayout>}>
           <Route path="dashboard" element={<BusinessDashboard />} />
+          <Route path="transactions" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Transactions')))}
+            </Suspense>
+          } />
+          <Route path="payments" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Payments')))}
+            </Suspense>
+          } />
+          <Route path="invoices" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Invoices')))}
+            </Suspense>
+          } />
+          <Route path="cash-flow" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/CashFlow')))}
+            </Suspense>
+          } />
+          <Route path="loans" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Loans')))}
+            </Suspense>
+          } />
+          <Route path="investments" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Investments')))}
+            </Suspense>
+          } />
+          <Route path="payroll" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Payroll')))}
+            </Suspense>
+          } />
+          <Route path="taxes" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Taxes')))}
+            </Suspense>
+          } />
+          <Route path="reports" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Reports')))}
+            </Suspense>
+          } />
+          <Route path="accounts" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Accounts')))}
+            </Suspense>
+          } />
+          <Route path="cards" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Cards')))}
+            </Suspense>
+          } />
+          <Route path="history" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/History')))}
+            </Suspense>
+          } />
+          <Route path="transfers" element={
+            <Suspense fallback={<div>Cargando...</div>}>
+              {React.createElement(lazy(() => import('@/pages/business/Transfers')))}
+            </Suspense>
+          } />
         </Route>
 
         {/* Commercial Banking Routes */}
-        <Route path="/commercial">
+        <Route path="/commercial" element={<AppLayout>
+          <Outlet />
+        </AppLayout>}>
           <Route path="" element={<CommercialDashboard />} />
           <Route path="dashboard" element={<CommercialDashboard />} />
           
@@ -96,9 +169,20 @@ export function AppRoutes() {
 
           {/* Fund Management Routes */}
           <Route path="fund-management">
-            <Route path="" element={<FundManagement />} />
+            <Route path="" element={<FundManagementDashboard />} />
             <Route path="portfolios" element={<Portfolios />} />
             <Route path="portfolios/ai" element={<AIPortfolios />} />
+            <Route path="trade" element={<TradingPlatform />} />
+            <Route path="reports" element={<InvestmentReports />} />
+          </Route>
+          
+          {/* Organization Management Routes */}
+          <Route path="organization">
+            <Route path="permissions" element={
+              <Suspense fallback={<div>Cargando...</div>}>
+                {React.createElement(lazy(() => import('@/pages/commercial/organization/Permissions')))}
+              </Suspense>
+            } />
           </Route>
 
           {/* Additional Commercial Routes */}
@@ -107,25 +191,29 @@ export function AppRoutes() {
         </Route>
 
         {/* Private Banking Routes */}
-        <Route path="/private">
+        <Route path="/private" element={<AppLayout>
+          <Outlet />
+        </AppLayout>}>
           <Route path="dashboard" element={<PrivateBankingDashboard />} />
         </Route>
 
         {/* Developer Routes */}
-        <Route path="/developer">
+        <Route path="/developer" element={<AppLayout>
+          <Outlet />
+        </AppLayout>}>
           <Route path="dashboard" element={<DeveloperPortal />} />
         </Route>
 
         {/* Shared Routes */}
-        <Route path="/wallet" element={<WalletPage />} />
-        <Route path="/marketplace" element={<MarketplacePage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/transfer" element={<TransferPage />} />
-        <Route path="/bills" element={<BillsPage />} />
-        <Route path="/time-deposits" element={<TimeDepositsPage />} />
-        <Route path="/savings" element={<SavingsPage />} />
-        <Route path="/investments" element={<InvestmentsPage />} />
-        <Route path="/deposits" element={<DepositsPage />} />
+        <Route path="/wallet" element={<AppLayout><WalletPage /></AppLayout>} />
+        <Route path="/marketplace" element={<AppLayout><MarketplacePage /></AppLayout>} />
+        <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
+        <Route path="/transfer" element={<AppLayout><TransferPage /></AppLayout>} />
+        <Route path="/bills" element={<AppLayout><BillsPage /></AppLayout>} />
+        <Route path="/time-deposits" element={<AppLayout><TimeDepositsPage /></AppLayout>} />
+        <Route path="/savings" element={<AppLayout><SavingsPage /></AppLayout>} />
+        <Route path="/investments" element={<AppLayout><InvestmentsPage /></AppLayout>} />
+        <Route path="/deposits" element={<AppLayout><DepositsPage /></AppLayout>} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

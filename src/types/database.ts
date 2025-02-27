@@ -3,9 +3,16 @@ export interface Profile {
   id: string;
   first_name: string | null;
   last_name: string | null;
+  profile_type?: string;
   created_at: string;
   updated_at: string;
 }
+
+// Importamos los tipos de permisos
+import type { Organization, UserOrganization, UserPermission, UserRole } from './permissions';
+
+// Exportamos para que estén disponibles al importar desde database.ts
+export type { Organization, UserOrganization, UserPermission, UserRole };
 
 export interface Transaction {
   id: string;

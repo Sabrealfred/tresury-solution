@@ -1,219 +1,291 @@
-
 import { AppLayout } from "@/components/layout/app-layout";
 import { CommercialHeader } from "@/components/commercial/CommercialHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
-import {
-  TrendingUp,
-  ChevronRight,
-  DollarSign,
-  ChartPie,
-  ArrowUpRight,
+import { 
+  BarChart3, 
+  LineChart, 
+  PieChart, 
+  Wallet, 
+  ArrowUpRight, 
   ArrowDownRight,
-  Brain
+  TrendingUp,
+  FileText,
+  DollarSign,
+  BarChart
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { fundManagementService } from "@/services/fundManagementService";
+import { Link } from "react-router-dom";
 
-const performanceData = [
-  { month: 'Jan', return: 2.5 },
-  { month: 'Feb', return: 3.2 },
-  { month: 'Mar', return: 2.8 },
-  { month: 'Apr', return: 3.5 },
-  { month: 'May', return: 4.2 },
-  { month: 'Jun', return: 3.8 }
-];
+export default function FundManagementDashboard() {
+  // Fetch portfolios
+  const { data: portfolios = [], isLoading: isLoadingPortfolios } = useQuery({
+    queryKey: ['portfolios'],
+    queryFn: () => fundManagementService.getPortfolios()
+  });
 
-const allocationData = [
-  { name: 'Equity', value: 45 },
-  { name: 'Fixed Income', value: 30 },
-  { name: 'Cash', value: 15 },
-  { name: 'Alternative', value: 10 }
-];
+  // Calculate portfolio summary
+  const portfolioSummary = {
+    totalValue: portfolios.reduce((total, portfolio) => {
+      // Calculate portfolio value based on allocation percentages and a base value
+      const baseValue = portfolio.id === "1" ? 1500000 : 
+                        portfolio.id === "2" ? 750000 : 
+                        portfolio.id === "3" ? 200000 : 500000;
+      return total + baseValue;
+    }, 0),
+    monthlyChange: 3.2, // Mock data
+    yearlyChange: 12.5, // Mock data
+    allocation: {
+      stocks: 65,
+      bonds: 25,
+      cash: 5,
+      alternatives: 5
+    },
+    portfolios: portfolios.map(portfolio => ({
+      id: portfolio.id,
+      name: portfolio.name,
+      value: portfolio.id === "1" ? 1500000 : 
+             portfolio.id === "2" ? 750000 : 
+             portfolio.id === "3" ? 200000 : 500000,
+      change: portfolio.expected_return / 4, // Quarterly change (mock data)
+      risk: portfolio.risk_level
+    }))
+  };
 
-const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'];
+  // Get the first active portfolio for transactions
+  const activePortfolio = portfolios.find(p => p.status === "active");
 
-const quickActions = [
-  {
-    title: "Portfolio Analysis",
-    icon: ChartPie,
-    path: "/commercial/fund-management/portfolios"
-  },
-  {
-    title: "AI Portfolios",
-    icon: Brain,
-    path: "/commercial/fund-management/portfolios/ai"
-  },
-  {
-    title: "Investment Reports",
-    icon: DollarSign,
-    path: "/commercial/fund-management/reports"
-  },
-  {
-    title: "Trade Securities",
-    icon: TrendingUp,
-    path: "/commercial/fund-management/trade"
-  }
-];
+  // Fetch transactions for the active portfolio
+  const { data: transactions = [], isLoading: isLoadingTransactions } = useQuery({
+    queryKey: ['portfolio-transactions', activePortfolio?.id],
+    queryFn: () => activePortfolio 
+      ? fundManagementService.getPortfolioTransactions(activePortfolio.id)
+      : Promise.resolve([]),
+    enabled: !!activePortfolio
+  });
 
-const MetricCard = ({ title, value, change, trend }: {
-  title: string;
-  value: string;
-  change: string;
-  trend: 'up' | 'down';
-}) => (
-  <Card>
-    <CardContent className="pt-6">
-      <p className="text-sm text-muted-foreground">{title}</p>
-      <h3 className="text-2xl font-bold mt-2">{value}</h3>
-      <p className={`text-sm mt-2 flex items-center ${
-        trend === 'up' ? 'text-green-500' : 'text-red-500'
-      }`}>
-        {trend === 'up' ? (
-          <ArrowUpRight className="h-4 w-4 mr-1" />
-        ) : (
-          <ArrowDownRight className="h-4 w-4 mr-1" />
-        )}
-        {change}
-      </p>
-    </CardContent>
-  </Card>
-);
-
-export default function FundManagement() {
-  const navigate = useNavigate();
+  // Format transactions for display
+  const recentTransactions = transactions.map(transaction => ({
+    id: transaction.id,
+    type: transaction.transaction_type,
+    security: transaction.security_symbol,
+    amount: transaction.total_amount,
+    date: transaction.created_at.split('T')[0],
+    status: transaction.status
+  })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
 
   return (
     <AppLayout>
       <div className="container mx-auto p-6">
         <CommercialHeader 
           title="Fund Management" 
-          description="Manage and monitor your investment portfolio"
-          showBack={true}
+          description="Manage your investment portfolios and trading activities"
         />
 
-        {/* Key Metrics */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <MetricCard
-            title="Total Portfolio Value"
-            value="$4.2M"
-            change="+5.8% vs last month"
-            trend="up"
-          />
-          <MetricCard
-            title="YTD Return"
-            value="12.4%"
-            change="+2.1% vs benchmark"
-            trend="up"
-          />
-          <MetricCard
-            title="Risk Score"
-            value="Medium"
-            change="No change"
-            trend="up"
-          />
-          <MetricCard
-            title="Cash Position"
-            value="$620K"
-            change="-8.3% vs target"
-            trend="down"
-          />
-        </div>
-
-        {/* Performance Chart */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        {/* Portfolio Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Portfolio Performance
-              </CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Total Portfolio Value</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="return" 
-                      stroke="#8b5cf6" 
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="text-2xl font-bold">${portfolioSummary.totalValue.toLocaleString()}</div>
+              <div className="flex items-center mt-1 text-xs text-green-600">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                <span>{portfolioSummary.monthlyChange}% this month</span>
               </div>
             </CardContent>
           </Card>
-
+          
           <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">YTD Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">+{portfolioSummary.yearlyChange}%</div>
+              <div className="flex items-center mt-1 text-xs text-muted-foreground">
+                <BarChart className="h-3 w-3 mr-1" />
+                <span>vs. +8.2% benchmark</span>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Active Portfolios</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{portfolioSummary.portfolios.length}</div>
+              <div className="flex items-center mt-1 text-xs text-muted-foreground">
+                <Wallet className="h-3 w-3 mr-1" />
+                <span>Across multiple strategies</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Asset Allocation */}
+          <Card className="lg:col-span-1">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ChartPie className="h-5 w-5" />
+              <CardTitle className="flex items-center">
+                <PieChart className="h-5 w-5 mr-2" />
                 Asset Allocation
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={allocationData}
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {allocationData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="flex justify-center gap-4 mt-4">
-                  {allocationData.map((item, index) => (
-                    <div key={item.name} className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: COLORS[index] }}
-                      />
-                      <span className="text-sm">{item.name}</span>
+              <div className="space-y-4">
+                {Object.entries(portfolioSummary.allocation).map(([asset, percentage]) => (
+                  <div key={asset} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className={`h-3 w-3 rounded-full mr-2 ${
+                        asset === 'stocks' ? 'bg-blue-500' :
+                        asset === 'bonds' ? 'bg-green-500' :
+                        asset === 'cash' ? 'bg-yellow-500' :
+                        'bg-purple-500'
+                      }`} />
+                      <span className="capitalize">{asset}</span>
                     </div>
-                  ))}
-                </div>
+                    <span className="font-medium">{percentage}%</span>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6">
+                <Button variant="outline" className="w-full">
+                  <FileText className="h-4 w-4 mr-2" />
+                  View Detailed Breakdown
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Portfolios */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2" />
+                Your Portfolios
+              </CardTitle>
+              <Link to="/commercial/fund-management/portfolios">
+                <Button variant="outline" size="sm">View All</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {isLoadingPortfolios ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : portfolioSummary.portfolios.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No portfolios found
+                  </div>
+                ) : portfolioSummary.portfolios.map((portfolio) => (
+                  <div key={portfolio.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div>
+                      <h3 className="font-medium">{portfolio.name}</h3>
+                      <p className="text-sm text-muted-foreground">Risk: {portfolio.risk}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">${portfolio.value.toLocaleString()}</p>
+                      <p className={`text-sm ${portfolio.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {portfolio.change >= 0 ? '+' : ''}{portfolio.change}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {quickActions.map((action) => (
-            <Button
-              key={action.title}
-              variant="outline"
-              className="h-auto py-4 flex flex-col items-center gap-2"
-              onClick={() => navigate(action.path)}
-            >
-              <action.icon className="h-5 w-5" />
-              <span>{action.title}</span>
-            </Button>
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Transactions */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center">
+                <LineChart className="h-5 w-5 mr-2" />
+                Recent Transactions
+              </CardTitle>
+              <Link to="/commercial/fund-management/trade">
+                <Button variant="outline" size="sm">Trade Now</Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {isLoadingTransactions ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : recentTransactions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No recent transactions
+                  </div>
+                ) : recentTransactions.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center">
+                      {transaction.type === 'buy' ? (
+                        <ArrowDownRight className="h-4 w-4 mr-2 text-green-600" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 mr-2 text-red-600" />
+                      )}
+                      <div>
+                        <h3 className="font-medium">{transaction.security}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {new Date(transaction.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">${transaction.amount.toLocaleString()}</p>
+                      <p className="text-sm capitalize text-muted-foreground">{transaction.type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                Quick Actions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <Link to="/commercial/fund-management/trade">
+                  <Button className="w-full h-auto py-6 flex flex-col items-center justify-center gap-2" variant="outline">
+                    <BarChart3 className="h-6 w-6" />
+                    <span>Trade Securities</span>
+                  </Button>
+                </Link>
+                <Link to="/commercial/fund-management/portfolios">
+                  <Button className="w-full h-auto py-6 flex flex-col items-center justify-center gap-2" variant="outline">
+                    <PieChart className="h-6 w-6" />
+                    <span>Manage Portfolios</span>
+                  </Button>
+                </Link>
+                <Link to="/commercial/fund-management/reports">
+                  <Button className="w-full h-auto py-6 flex flex-col items-center justify-center gap-2" variant="outline">
+                    <FileText className="h-6 w-6" />
+                    <span>View Reports</span>
+                  </Button>
+                </Link>
+                <Link to="/commercial/fund-management/portfolios/ai">
+                  <Button className="w-full h-auto py-6 flex flex-col items-center justify-center gap-2" variant="outline">
+                    <TrendingUp className="h-6 w-6" />
+                    <span>AI Portfolios</span>
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AppLayout>

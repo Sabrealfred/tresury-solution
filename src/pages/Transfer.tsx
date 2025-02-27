@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ export default function TransferPage() {
   const [sourceAccount, setSourceAccount] = useState('');
   const [destinationAccount, setDestinationAccount] = useState('');
 
+  const queryClient = useQueryClient();
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['user-accounts'],
     queryFn: async () => {
@@ -45,14 +46,33 @@ export default function TransferPage() {
       return;
     }
 
+    const transferAmount = parseFloat(amount);
+    
+    // Find source account to check balance
+    const sourceAccountData = accounts.find(acc => acc.id === sourceAccount);
+    if (!sourceAccountData) {
+      toast.error('Cuenta origen no encontrada');
+      return;
+    }
+
+    // Validate sufficient balance
+    if (sourceAccountData.balance < transferAmount) {
+      toast.error('Saldo insuficiente para realizar la transferencia');
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No authenticated user');
 
-      const { error } = await supabase
+      // Start a transaction
+      const transferAmount = parseFloat(amount);
+      
+      // 1. Insert transfer record
+      const { error: transferError } = await supabase
         .from('transfers')
         .insert({
-          amount: parseFloat(amount),
+          amount: transferAmount,
           source_wallet_id: sourceAccount,
           destination_details: { account_id: destinationAccount },
           destination_type: 'internal',
@@ -60,12 +80,50 @@ export default function TransferPage() {
           destination_currency: 'USD',
           exchange_rate: 1,
           transfer_method: 'internal',
-          user_id: user.id // Agregado el user_id requerido
+          user_id: user.id,
+          status: 'completed' // Mark as completed immediately
         });
 
-      if (error) throw error;
+      if (transferError) throw transferError;
 
-      toast.success('Transferencia iniciada exitosamente');
+      // 2. Update source account balance (subtract amount)
+      const { error: sourceUpdateError } = await supabase
+        .from('accounts')
+        .update({ balance: sourceAccountData.balance - transferAmount })
+        .eq('id', sourceAccount);
+
+      if (sourceUpdateError) throw sourceUpdateError;
+
+      // 3. Update destination account balance (add amount)
+      const destinationAccountData = accounts.find(acc => acc.id === destinationAccount);
+      if (destinationAccountData) {
+        const { error: destUpdateError } = await supabase
+          .from('accounts')
+          .update({ balance: destinationAccountData.balance + transferAmount })
+          .eq('id', destinationAccount);
+
+        if (destUpdateError) throw destUpdateError;
+      }
+
+      // 4. Create a transaction record
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          amount: transferAmount,
+          currency: 'USD',
+          transaction_type: 'transfer',
+          status: 'completed',
+          user_id: user.id
+        });
+
+      if (transactionError) {
+        console.error('Error creating transaction record:', transactionError);
+        // Continue even if transaction record fails
+      }
+
+      // Success - refresh data and reset form
+      await queryClient.invalidateQueries({ queryKey: ['user-accounts'] });
+      toast.success('Transferencia completada exitosamente');
       setAmount('');
       setSourceAccount('');
       setDestinationAccount('');

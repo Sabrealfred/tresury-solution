@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Logo } from "./sidebar/logo";
-import { NavigationItems } from "./sidebar/navigation-items";
+import { UnifiedNavigation } from "./sidebar/unified-navigation";
 import { BottomButtons } from "./sidebar/bottom-buttons";
 import { CollapseButton } from "./sidebar/collapse-button";
 import { OrganizationSelector } from "@/components/organization/OrganizationSelector";
@@ -33,7 +33,7 @@ export function SidebarNav({
           )}
         </div>
         
-        <NavigationItems isCollapsed={isCollapsed} />
+        <UnifiedNavigation isCollapsed={isCollapsed} />
 
         <BottomButtons 
           isCollapsed={isCollapsed}

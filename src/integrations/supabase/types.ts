@@ -1,3 +1,5 @@
+import type { Database as DatabaseDefinition } from '@/types/supabase';
+
 export type Json =
   | string
   | number
@@ -6,7 +8,39 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export type Database = DatabaseDefinition;
+
+// Tipos adicionales para las tablas de permisos
+export interface UserPermissionRow {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  permission_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserOrganizationRow {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OrganizationRow {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Tipo original para referencia
+export type DatabaseOriginal = {
   public: {
     Tables: {
       accounts: {

@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, User, Building, ShieldCheck } from "lucide-react";
 import { UserRoleData } from "@/types/auth";
 
 export default function Auth() {
@@ -14,6 +14,7 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isDemoLoading, setIsDemoLoading] = useState<string | null>(null);
 
   useEffect(() => {
     checkSession();
@@ -54,6 +55,18 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
+      // Verificar si es un usuario de demostración
+      if (
+        (email === "admin1@demo.com" && password === "admin123") ||
+        (email === "user1@demo.com" && password === "user123") ||
+        (email === "business@demo.com" && password === "business123")
+      ) {
+        // Inicio de sesión de demostración
+        handleDemoLogin(email);
+        return;
+      }
+
+      // Inicio de sesión normal con Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -70,6 +83,35 @@ export default function Auth() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDemoLogin = (demoEmail: string) => {
+    setIsDemoLoading(demoEmail);
+    
+    // Simular un retraso para la autenticación
+    setTimeout(() => {
+      let role = "user";
+      
+      if (demoEmail === "admin1@demo.com") {
+        role = "admin";
+        navigate("/admin/dashboard");
+      } else if (demoEmail === "business@demo.com") {
+        role = "business";
+        navigate("/business/dashboard");
+      } else {
+        navigate("/");
+      }
+      
+      // Guardar información del usuario de demostración en localStorage
+      localStorage.setItem("demoUser", JSON.stringify({
+        email: demoEmail,
+        role: role,
+        isDemo: true
+      }));
+      
+      toast.success("Inicio de sesión de demostración exitoso");
+      setIsDemoLoading(null);
+    }, 1000);
   };
 
   return (
@@ -123,11 +165,70 @@ export default function Auth() {
           </Button>
         </form>
 
-        <div className="text-center text-sm text-muted-foreground">
-          <p>Cuentas de demostración:</p>
-          <p>Admin: admin1@demo.com / admin123</p>
-          <p>Usuario: user1@demo.com / user123</p>
-          <p>Negocio: business@demo.com / business123</p>
+        <div className="space-y-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Cuentas de demostración
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2">
+            <Button 
+              variant="outline" 
+              className="flex justify-between items-center"
+              onClick={() => handleDemoLogin("admin1@demo.com")}
+              disabled={!!isDemoLoading}
+            >
+              <div className="flex items-center">
+                <ShieldCheck className="h-4 w-4 mr-2 text-primary" />
+                <span>Admin</span>
+              </div>
+              {isDemoLoading === "admin1@demo.com" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <span className="text-xs text-muted-foreground">admin1@demo.com</span>
+              )}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="flex justify-between items-center"
+              onClick={() => handleDemoLogin("user1@demo.com")}
+              disabled={!!isDemoLoading}
+            >
+              <div className="flex items-center">
+                <User className="h-4 w-4 mr-2 text-primary" />
+                <span>Usuario</span>
+              </div>
+              {isDemoLoading === "user1@demo.com" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <span className="text-xs text-muted-foreground">user1@demo.com</span>
+              )}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="flex justify-between items-center"
+              onClick={() => handleDemoLogin("business@demo.com")}
+              disabled={!!isDemoLoading}
+            >
+              <div className="flex items-center">
+                <Building className="h-4 w-4 mr-2 text-primary" />
+                <span>Negocio</span>
+              </div>
+              {isDemoLoading === "business@demo.com" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <span className="text-xs text-muted-foreground">business@demo.com</span>
+              )}
+            </Button>
+          </div>
         </div>
       </Card>
     </div>
