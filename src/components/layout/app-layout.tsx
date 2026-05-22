@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarNav } from "@/components/ui/sidebar-nav";
 import { Button } from "@/components/ui/button";
@@ -55,7 +54,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col bg-background transition-colors duration-300`}>
+    <div className={`min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300 dark:bg-gray-950 dark:text-gray-200`}>
       <div className="flex-1 flex">
         <Button
           variant="ghost"

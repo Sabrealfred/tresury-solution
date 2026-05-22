@@ -1,4 +1,3 @@
-
 import { AppLayout } from "@/components/layout/app-layout";
 import { CommercialHeader } from "@/components/commercial/CommercialHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,64 +28,9 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from "lucide-react";
-
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'credit' | 'debit';
-  category: string;
-  status: 'completed' | 'pending' | 'failed';
-}
-
-const transactions: Transaction[] = [
-  {
-    id: "1",
-    date: "2024-02-20",
-    description: "International Wire Transfer",
-    amount: 50000,
-    type: "debit",
-    category: "Wire Transfer",
-    status: "completed"
-  },
-  {
-    id: "2",
-    date: "2024-02-19",
-    description: "Corporate Payment",
-    amount: 75000,
-    type: "credit",
-    category: "Payment",
-    status: "completed"
-  },
-  {
-    id: "3",
-    date: "2024-02-18",
-    description: "Supplier Invoice",
-    amount: 25000,
-    type: "debit",
-    category: "Invoice",
-    status: "pending"
-  },
-  {
-    id: "4",
-    date: "2024-02-17",
-    description: "Client Payment",
-    amount: 100000,
-    type: "credit",
-    category: "Payment",
-    status: "completed"
-  },
-  {
-    id: "5",
-    date: "2024-02-16",
-    description: "Payroll Processing",
-    amount: 200000,
-    type: "debit",
-    category: "Payroll",
-    status: "pending"
-  }
-];
+import { Transaction } from "@/types/treasury/Transaction";
+import { getTransactions } from "@/services/treasuryService";
+import { useEffect, useState } from "react";
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -102,6 +46,25 @@ const getStatusColor = (status: string) => {
 };
 
 export default function TransactionManagement() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadTransactions() {
+      setLoading(true);
+      const transactions = await getTransactions("1"); // Replace with actual account ID
+      setTransactions(transactions);
+      setLoading(false);
+    }
+
+    loadTransactions();
+  }, []);
+
+  const totalVolume = transactions.reduce((acc, transaction) => acc + transaction.amount, 0);
+  const pendingTransactions = transactions.filter(transaction => transaction.category === "Invoice").length;
+  const completedTransactions = transactions.filter(transaction => transaction.category === "Payment").length;
+  const successRate = transactions.length > 0 ? completedTransactions / transactions.length * 100 : 0;
+
   return (
     <AppLayout>
       <div className="container mx-auto p-6">
@@ -118,7 +81,7 @@ export default function TransactionManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total Volume</p>
-                    <h3 className="text-2xl font-bold mt-1">$450,000</h3>
+                    <h3 className="text-2xl font-bold mt-1">${totalVolume.toLocaleString()}</h3>
                     <p className="text-sm text-green-500 flex items-center mt-1">
                       <ArrowUpRight className="h-4 w-4 mr-1" />
                       +12.5%
@@ -136,9 +99,9 @@ export default function TransactionManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                    <h3 className="text-2xl font-bold mt-1">$225,000</h3>
+                    <h3 className="text-2xl font-bold mt-1">{pendingTransactions}</h3>
                     <p className="text-sm text-yellow-500 flex items-center mt-1">
-                      2 transactions
+                      {pendingTransactions} transactions
                     </p>
                   </div>
                   <div className="bg-yellow-50 p-3 rounded-lg">
@@ -153,9 +116,9 @@ export default function TransactionManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                    <h3 className="text-2xl font-bold mt-1">$225,000</h3>
+                    <h3 className="text-2xl font-bold mt-1">{completedTransactions}</h3>
                     <p className="text-sm text-green-500 flex items-center mt-1">
-                      3 transactions
+                      {completedTransactions} transactions
                     </p>
                   </div>
                   <div className="bg-green-50 p-3 rounded-lg">
@@ -170,7 +133,7 @@ export default function TransactionManagement() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
-                    <h3 className="text-2xl font-bold mt-1">94.5%</h3>
+                    <h3 className="text-2xl font-bold mt-1">{successRate.toFixed(1)}%</h3>
                     <p className="text-sm text-green-500 flex items-center mt-1">
                       <ArrowUpRight className="h-4 w-4 mr-1" />
                       +2.5%
@@ -245,25 +208,31 @@ export default function TransactionManagement() {
                     <TableHead>Description</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>
+                      Tags
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
-                      <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                      <TableCell>{transaction.description}</TableCell>
-                      <TableCell>{transaction.category}</TableCell>
-                      <TableCell className={transaction.type === 'credit' ? 'text-green-500' : 'text-red-500'}>
-                        {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.status)}`}>
-                          {transaction.status}
-                        </span>
-                      </TableCell>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    transactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{transaction.description}</TableCell>
+                        <TableCell>{transaction.category}</TableCell>
+                        <TableCell className={transaction.type === 'credit' ? 'text-green-500' : 'text-red-500'}>
+                          {transaction.type === 'credit' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          {transaction.tags.join(", ")}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
