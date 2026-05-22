@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Building2,
@@ -10,15 +10,18 @@ import {
   Globe,
   ShieldCheck,
   CreditCard,
-  Briefcase
+  Briefcase,
+  LayoutDashboard
 } from "lucide-react";
 
 export function CommercialNavigation() {
+  const location = useLocation();
+  
   const sections = [
     {
       title: "Treasury",
       items: [
-        { name: "Dashboard", path: "/commercial/treasury", icon: Building2 },
+        { name: "Dashboard", path: "/commercial/treasury", icon: LayoutDashboard },
         { name: "Cash Flow", path: "/commercial/treasury/cash-flow", icon: DollarSign },
         { name: "Transactions", path: "/commercial/treasury/transactions", icon: FileText },
         { name: "Investments", path: "/commercial/treasury/investments", icon: BarChart },
@@ -39,24 +42,28 @@ export function CommercialNavigation() {
     {
       title: "Fund Management",
       items: [
-        { name: "Dashboard", path: "/commercial/fund-management", icon: Briefcase },
+        { name: "Dashboard", path: "/commercial/fund-management", icon: LayoutDashboard },
         { name: "Portfolios", path: "/commercial/fund-management/portfolios", icon: BarChart },
         { name: "AI Portfolios", path: "/commercial/fund-management/portfolios/ai", icon: BarChart },
       ]
     }
   ];
 
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
+
   return (
-    <nav className="space-y-6">
+    <nav className="space-y-8">
       {sections.map((section) => (
-        <div key={section.title} className="space-y-2">
-          <h3 className="font-semibold text-lg px-2">{section.title}</h3>
+        <div key={section.title} className="space-y-3">
+          <h3 className="font-semibold text-lg text-muted-foreground">{section.title}</h3>
           <div className="space-y-1">
             {section.items.map((item) => (
               <Link key={item.path} to={item.path}>
                 <Button
-                  variant="ghost"
-                  className="w-full justify-start"
+                  variant={isActive(item.path) ? "secondary" : "ghost"}
+                  className="w-full justify-start text-sm h-9"
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}

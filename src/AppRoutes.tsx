@@ -46,6 +46,7 @@ import AIPortfolios from "@/pages/commercial/fund-management/AIPortfolios";
 import TradingPlatform from "@/pages/commercial/fund-management/trade/index";
 import InvestmentReports from "@/pages/commercial/fund-management/reports/index";
 import OperationsDashboard from "@/pages/commercial/operations/Dashboard";
+import { CommercialLayout } from "@/components/commercial/CommercialLayout";
 
 export function AppRoutes() {
   return (
@@ -143,9 +144,9 @@ export function AppRoutes() {
         </Route>
 
         {/* Commercial Banking Routes */}
-        <Route path="/commercial" element={<AppLayout>
+        <Route path="/commercial" element={<CommercialLayout>
           <Outlet />
-        </AppLayout>}>
+        </CommercialLayout>}>
           <Route path="" element={<CommercialDashboard />} />
           <Route path="dashboard" element={<CommercialDashboard />} />
           
