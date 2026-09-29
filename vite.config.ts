@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     // Proporcionar polyfill para crypto
-    global: {},
+    global: 'globalThis',
   },
   // Configuración para resolver el problema con crypto
   optimizeDeps: {
