@@ -116,11 +116,6 @@ export function AppRoutes() {
               {React.createElement(lazy(() => import('@/pages/business/Taxes')))}
             </Suspense>
           } />
-          <Route path="reports" element={
-            <Suspense fallback={<div>Cargando...</div>}>
-              {React.createElement(lazy(() => import('@/pages/business/Reports')))}
-            </Suspense>
-          } />
           <Route path="accounts" element={
             <Suspense fallback={<div>Cargando...</div>}>
               {React.createElement(lazy(() => import('@/pages/business/Accounts')))}
