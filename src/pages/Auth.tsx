@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, User, Building, ShieldCheck } from "lucide-react";
 import { UserRoleData } from "@/types/auth";
+import { DEMO_LOGIN_ENABLED } from "@/lib/authGuard";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -57,9 +58,10 @@ export default function Auth() {
     try {
       // Verificar si es un usuario de demostración
       if (
-        (email === "admin1@demo.com" && password === "admin123") ||
+        DEMO_LOGIN_ENABLED &&
+        ((email === "admin1@demo.com" && password === "admin123") ||
         (email === "user1@demo.com" && password === "user123") ||
-        (email === "business@demo.com" && password === "business123")
+        (email === "business@demo.com" && password === "business123"))
       ) {
         // Inicio de sesión de demostración
         handleDemoLogin(email);
@@ -86,6 +88,7 @@ export default function Auth() {
   };
 
   const handleDemoLogin = (demoEmail: string) => {
+    if (!DEMO_LOGIN_ENABLED) return;
     setIsDemoLoading(demoEmail);
     
     // Simular un retraso para la autenticación
@@ -165,6 +168,7 @@ export default function Auth() {
           </Button>
         </form>
 
+        {DEMO_LOGIN_ENABLED && (
         <div className="space-y-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -230,6 +234,7 @@ export default function Auth() {
             </Button>
           </div>
         </div>
+        )}
       </Card>
     </div>
   );

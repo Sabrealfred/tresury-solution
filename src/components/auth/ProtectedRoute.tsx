@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { DEMO_LOGIN_ENABLED, isAccessAllowed } from "@/lib/authGuard";
 
 export function ProtectedRoute() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -10,16 +11,18 @@ export function ProtectedRoute() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Verificar si hay un usuario de demostración en localStorage
-      const demoUser = localStorage.getItem("demoUser");
-      if (demoUser) {
-        setIsAuthenticated(true);
-        return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(
+          isAccessAllowed({
+            hasSession: !!session,
+            hasDemoUser: !!localStorage.getItem("demoUser"),
+            demoEnabled: DEMO_LOGIN_ENABLED,
+          })
+        );
+      } catch {
+        setIsAuthenticated(false);
       }
-
-      // Verificar sesión con Supabase
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
     };
 
     checkAuth();
